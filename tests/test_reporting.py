@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from sacs_oreo.models import DiscoveredURL, Finding, ScanReport
+from sacs_oreo.models import DiscoveredURL, EvidenceArtifact, Finding, ScanReport
 from sacs_oreo.reporting import write_html_report, write_json_report
 
 
@@ -23,10 +23,20 @@ class ReportingTests(unittest.TestCase):
                     id="OREO-999",
                     title="Test finding",
                     severity="Low",
+                    confidence="High",
+                    reproducibility="Reproducible",
                     category="Test Category",
                     owasp="A05:2021",
                     affected_url="https://example.com/",
                     evidence="evidence",
+                    evidence_artifacts=[
+                        EvidenceArtifact(
+                            kind="response-header",
+                            description="Captured response headers for the affected URL.",
+                            path="evidence/OREO-999-response.txt",
+                            sha256="abc123",
+                        )
+                    ],
                     business_impact="This can reduce customer trust for a growing SME.",
                     recommendation="fix",
                     references=[],
@@ -47,12 +57,17 @@ class ReportingTests(unittest.TestCase):
         self.assertEqual(finding["id"], "OREO-999")
         self.assertEqual(finding["category"], "Test Category")
         self.assertEqual(finding["owasp"], "A05:2021")
+        self.assertEqual(finding["confidence"], "High")
+        self.assertEqual(finding["reproducibility"], "Reproducible")
+        self.assertEqual(finding["evidence_artifacts"][0]["path"], "evidence/OREO-999-response.txt")
         self.assertEqual(finding["business_impact"], "This can reduce customer trust for a growing SME.")
         self.assertEqual(finding["recommendation"], "fix")
         self.assertEqual(finding["references"], [])
         self.assertIn("Scan mode:", html)
         self.assertIn("OREO-999", html)
         self.assertIn("Test finding", html)
+        self.assertIn("Confidence", html)
+        self.assertIn("Reproducibility", html)
         self.assertIn("Business Impact", html)
         self.assertIn("Recommendation", html)
         self.assertIn("https://example.com/", html)

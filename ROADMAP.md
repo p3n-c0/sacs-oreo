@@ -38,6 +38,8 @@ This roadmap keeps Oreo powerful while preserving an authorized, non-destructive
 - SACS-branded HTML report
 - Finding de-duplication
 - Evidence grouping
+- False-positive reduction through confidence scoring and reproducibility tracking
+- Request/response evidence preservation model
 - Severity scoring refinement
 - Remediation guidance
 - Executive summary

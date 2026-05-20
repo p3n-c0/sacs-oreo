@@ -16,6 +16,8 @@ Oreo is at **MVP / Variant 1** stage. It is suitable as a foundation for a profe
 - Collection of discovered URLs, forms, cookies, response headers, status codes, content types, and basic technology hints
 - Safe checks for missing security headers, insecure cookies, HTTP usage, CORS misconfiguration, exposed sensitive files, directory listing, robots.txt, sitemap.xml, harmless reflected input, and SQL error patterns
 - Severity labels: Informational, Low, Medium, High, Critical
+- Confidence and reproducibility fields for every finding
+- Evidence artifact slots for future request/response preservation
 - OWASP Top 10 mappings where applicable
 - Remediation guidance for every finding
 - Nigeria/Africa SME business impact notes in findings
@@ -80,10 +82,13 @@ Oreo findings use a stable structured format so JSON reports, HTML reports, dash
   "id": "OREO-001",
   "title": "Missing Content Security Policy",
   "severity": "Medium",
+  "confidence": "High",
+  "reproducibility": "Reproducible",
   "category": "Security Headers",
   "owasp": "A05:2021",
   "affected_url": "https://example.com/",
   "evidence": "content-security-policy absent from response headers",
+  "evidence_artifacts": [],
   "business_impact": "This can make it easier for a successful script injection issue to affect customers. For fintech, e-commerce, school portals, NGOs, clinics, and member platforms collecting personal data, fix this before public launch or major campaigns.",
   "recommendation": "Add a restrictive Content-Security-Policy header to reduce script injection and data exfiltration risk.",
   "references": []
@@ -93,6 +98,8 @@ Oreo findings use a stable structured format so JSON reports, HTML reports, dash
 Finding definitions are centralized in `src/sacs_oreo/findings.py`.
 
 The `business_impact` field is written for owners and operators, not only engineers. It explains how a weakness can affect customer trust, launch readiness, data handling, or daily operations for SMEs across Nigeria and Africa.
+
+The `confidence`, `reproducibility`, and `evidence_artifacts` fields are designed to reduce false positives and make findings easier to verify. Future versions will use `evidence_artifacts` to reference preserved request and response captures without bloating the main report.
 
 ## Tests
 

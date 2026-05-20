@@ -19,11 +19,14 @@ def write_html_report(report: ScanReport, output_path: Path) -> Path:
         "<tr>"
         f"<td>{html.escape(finding.id)}</td>"
         f"<td>{html.escape(finding.severity)}</td>"
+        f"<td>{html.escape(finding.confidence)}</td>"
+        f"<td>{html.escape(finding.reproducibility)}</td>"
         f"<td>{html.escape(finding.category)}</td>"
         f"<td>{html.escape(finding.title)}</td>"
         f"<td><a href=\"{html.escape(finding.affected_url)}\">{html.escape(finding.affected_url)}</a></td>"
         f"<td>{html.escape(finding.owasp or 'N/A')}</td>"
         f"<td>{html.escape(finding.evidence)}</td>"
+        f"<td>{html.escape(str(len(finding.evidence_artifacts)))}</td>"
         f"<td>{html.escape(finding.business_impact)}</td>"
         f"<td>{html.escape(finding.recommendation)}</td>"
         "</tr>"
@@ -69,9 +72,9 @@ def write_html_report(report: ScanReport, output_path: Path) -> Path:
   <h2>Findings</h2>
   <table>
     <thead>
-      <tr><th>ID</th><th>Severity</th><th>Category</th><th>Title</th><th>URL</th><th>OWASP</th><th>Evidence</th><th>Business Impact</th><th>Recommendation</th></tr>
+      <tr><th>ID</th><th>Severity</th><th>Confidence</th><th>Reproducibility</th><th>Category</th><th>Title</th><th>URL</th><th>OWASP</th><th>Evidence</th><th>Artifacts</th><th>Business Impact</th><th>Recommendation</th></tr>
     </thead>
-    <tbody>{findings_rows or '<tr><td colspan="9">No findings recorded.</td></tr>'}</tbody>
+    <tbody>{findings_rows or '<tr><td colspan="12">No findings recorded.</td></tr>'}</tbody>
   </table>
   <h2>Discovered URLs</h2>
   <table>

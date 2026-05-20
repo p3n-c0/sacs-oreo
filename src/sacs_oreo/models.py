@@ -5,6 +5,8 @@ from typing import Any
 
 
 SEVERITIES = ("Informational", "Low", "Medium", "High", "Critical")
+CONFIDENCE_LEVELS = ("Low", "Medium", "High")
+REPRODUCIBILITY_LEVELS = ("Unconfirmed", "Observed Once", "Reproducible")
 
 
 @dataclass(slots=True)
@@ -28,6 +30,14 @@ class CookieInfo:
     attributes: dict[str, str | bool] = field(default_factory=dict)
 
 
+@dataclass(slots=True)
+class EvidenceArtifact:
+    kind: str
+    description: str
+    path: str | None = None
+    sha256: str | None = None
+
+
 @dataclass
 class DiscoveredURL:
     url: str
@@ -45,10 +55,13 @@ class Finding:
     id: str
     title: str
     severity: str
+    confidence: str
+    reproducibility: str
     category: str
     owasp: str | None
     affected_url: str
     evidence: str
+    evidence_artifacts: list[EvidenceArtifact]
     business_impact: str
     recommendation: str
     references: list[str] = field(default_factory=list)

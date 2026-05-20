@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .models import Finding
+from .models import EvidenceArtifact, Finding
 
 
 @dataclass(frozen=True, slots=True)
@@ -10,6 +10,8 @@ class FindingTemplate:
     id: str
     title: str
     severity: str
+    confidence: str
+    reproducibility: str
     category: str
     owasp: str | None
     business_impact: str
@@ -22,6 +24,8 @@ FINDING_CATALOG = {
         id="OREO-001",
         title="Missing Content Security Policy",
         severity="Medium",
+        confidence="High",
+        reproducibility="Reproducible",
         category="Security Headers",
         owasp="A05:2021",
         business_impact="This can make it easier for a successful script injection issue to affect customers. For fintech, e-commerce, school portals, NGOs, clinics, and member platforms collecting personal data, fix this before public launch or major campaigns.",
@@ -31,6 +35,8 @@ FINDING_CATALOG = {
         id="OREO-002",
         title="Missing Strict Transport Security",
         severity="Medium",
+        confidence="High",
+        reproducibility="Reproducible",
         category="Security Headers",
         owasp="A02:2021",
         business_impact="Visitors may be easier to downgrade onto an unsafe connection, especially on public Wi-Fi in offices, cafes, campuses, hotels, or shared workspaces. For payment, login, and registration portals, this can weaken customer trust.",
@@ -40,6 +46,8 @@ FINDING_CATALOG = {
         id="OREO-003",
         title="Missing X-Content-Type-Options",
         severity="Low",
+        confidence="High",
+        reproducibility="Reproducible",
         category="Security Headers",
         owasp="A05:2021",
         business_impact="Browsers may try to guess file types instead of trusting the server. For SMEs sharing invoices, receipts, documents, or uploaded files, this can increase the chance that unsafe content is handled in the wrong way.",
@@ -49,6 +57,8 @@ FINDING_CATALOG = {
         id="OREO-004",
         title="Missing X-Frame-Options",
         severity="Low",
+        confidence="High",
+        reproducibility="Reproducible",
         category="Security Headers",
         owasp="A05:2021",
         business_impact="Attackers may be able to place your page inside another page and trick users into clicking the wrong thing. This matters for dashboards, payment flows, admin panels, and portals used by staff or customers.",
@@ -58,6 +68,8 @@ FINDING_CATALOG = {
         id="OREO-005",
         title="Missing Referrer-Policy",
         severity="Low",
+        confidence="High",
+        reproducibility="Reproducible",
         category="Security Headers",
         owasp="A01:2021",
         business_impact="Links from your site may leak page addresses to other websites. If URLs contain order IDs, reset tokens, application references, student IDs, or campaign tracking data, this can expose more business context than intended.",
@@ -67,6 +79,8 @@ FINDING_CATALOG = {
         id="OREO-006",
         title="Missing Permissions-Policy",
         severity="Informational",
+        confidence="High",
+        reproducibility="Reproducible",
         category="Security Headers",
         owasp="A05:2021",
         business_impact="The browser is not being told which features your site should or should not use. For customer-facing portals, it is better to explicitly limit access to features such as camera, microphone, geolocation, and payment APIs.",
@@ -76,6 +90,8 @@ FINDING_CATALOG = {
         id="OREO-007",
         title="Cookie Missing Secure Attribute",
         severity="Medium",
+        confidence="High",
+        reproducibility="Reproducible",
         category="Cookie Security",
         owasp="A02:2021",
         business_impact="A session cookie may be sent over an unsafe connection if the user is pushed onto HTTP. For customer accounts, staff portals, wallets, learning platforms, and donation systems, this can put account access at risk.",
@@ -85,6 +101,8 @@ FINDING_CATALOG = {
         id="OREO-008",
         title="Cookie Missing HttpOnly Attribute",
         severity="Low",
+        confidence="High",
+        reproducibility="Reproducible",
         category="Cookie Security",
         owasp="A03:2021",
         business_impact="If a script injection issue exists elsewhere, browser scripts may be able to read this cookie. For SMEs with customer logins or admin dashboards, this can turn a smaller website bug into an account takeover risk.",
@@ -94,6 +112,8 @@ FINDING_CATALOG = {
         id="OREO-009",
         title="Cookie Missing SameSite Attribute",
         severity="Low",
+        confidence="High",
+        reproducibility="Reproducible",
         category="Cookie Security",
         owasp="A01:2021",
         business_impact="The site is not clearly limiting when browsers send cookies across sites. For portals where users submit forms, update records, make payments, or manage profiles, this can make cross-site request risks harder to control.",
@@ -103,6 +123,8 @@ FINDING_CATALOG = {
         id="OREO-010",
         title="Target Uses HTTP",
         severity="High",
+        confidence="High",
+        reproducibility="Reproducible",
         category="Transport Security",
         owasp="A02:2021",
         business_impact="Customer traffic is not protected in transit. This can expose login details, forms, enquiries, payment steps, or personal data, and it can damage trust quickly for Nigerian and African SMEs trying to win online customers.",
@@ -112,6 +134,8 @@ FINDING_CATALOG = {
         id="OREO-011",
         title="Directory Listing Appears Enabled",
         severity="Medium",
+        confidence="Medium",
+        reproducibility="Observed Once",
         category="Content Exposure",
         owasp="A05:2021",
         business_impact="Visitors may be able to browse files that were never meant to be public. This can expose backups, invoices, test files, staff documents, or old uploads, which is especially risky for small teams without a dedicated security function.",
@@ -121,6 +145,8 @@ FINDING_CATALOG = {
         id="OREO-012",
         title="robots.txt Available for Review",
         severity="Informational",
+        confidence="High",
+        reproducibility="Observed Once",
         category="Reconnaissance Information",
         owasp=None,
         business_impact="This file is normal, but it may reveal admin paths, staging areas, or sections the business would rather keep quiet. Treat it as a public signpost and make sure it does not point to sensitive areas.",
@@ -130,6 +156,8 @@ FINDING_CATALOG = {
         id="OREO-013",
         title="sitemap.xml Available for Review",
         severity="Informational",
+        confidence="High",
+        reproducibility="Observed Once",
         category="Reconnaissance Information",
         owasp=None,
         business_impact="A sitemap helps search engines, but it can also show forgotten pages, campaign pages, old portals, or draft sections. For launch readiness, confirm every listed URL is meant to be public.",
@@ -139,6 +167,8 @@ FINDING_CATALOG = {
         id="OREO-014",
         title="Potentially Sensitive File Exposed",
         severity="High",
+        confidence="Medium",
+        reproducibility="Observed Once",
         category="Content Exposure",
         owasp="A05:2021",
         business_impact="This may expose secrets, database backups, source control details, or configuration files. For fintech, e-commerce, logistics, NGOs, and professional service firms, this can lead directly to data loss, account compromise, or reputational damage.",
@@ -148,6 +178,8 @@ FINDING_CATALOG = {
         id="OREO-015",
         title="Potential CORS Misconfiguration",
         severity="Medium",
+        confidence="Medium",
+        reproducibility="Observed Once",
         category="CORS",
         owasp="A05:2021",
         business_impact="A poorly controlled CORS policy can let untrusted websites interact with data meant for your own app. For customer dashboards, loan portals, school systems, and internal admin tools, review this before handling real user data.",
@@ -157,6 +189,8 @@ FINDING_CATALOG = {
         id="OREO-016",
         title="Basic Reflected Input Detected",
         severity="Medium",
+        confidence="Medium",
+        reproducibility="Observed Once",
         category="Input Reflection",
         owasp="A03:2021",
         business_impact="User input is appearing back on the page. If it is not properly encoded, an attacker could imitate your login page, steal customer credentials, or weaken trust in your business. For fintech, e-commerce, school portals, and NGOs collecting personal data, fix this before public launch.",
@@ -166,6 +200,8 @@ FINDING_CATALOG = {
         id="OREO-017",
         title="SQL Error Pattern Detected",
         severity="High",
+        confidence="Medium",
+        reproducibility="Observed Once",
         category="Injection Signals",
         owasp="A03:2021",
         business_impact="The application is showing signs of database errors to visitors. This can expose how the backend works and may point to deeper injection risk. For businesses storing customer, student, donor, payment, or inventory records, treat this as urgent.",
@@ -174,16 +210,27 @@ FINDING_CATALOG = {
 }
 
 
-def build_finding(key: str, affected_url: str, evidence: str, severity: str | None = None) -> Finding:
+def build_finding(
+    key: str,
+    affected_url: str,
+    evidence: str,
+    severity: str | None = None,
+    confidence: str | None = None,
+    reproducibility: str | None = None,
+    evidence_artifacts: list[EvidenceArtifact] | None = None,
+) -> Finding:
     template = FINDING_CATALOG[key]
     return Finding(
         id=template.id,
         title=template.title,
         severity=severity or template.severity,
+        confidence=confidence or template.confidence,
+        reproducibility=reproducibility or template.reproducibility,
         category=template.category,
         owasp=template.owasp,
         affected_url=affected_url,
         evidence=evidence,
+        evidence_artifacts=evidence_artifacts or [],
         business_impact=template.business_impact,
         recommendation=template.recommendation,
         references=list(template.references),
