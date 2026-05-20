@@ -50,11 +50,28 @@ def scan(args: argparse.Namespace) -> int:
     mode = get_scan_mode(config.mode)
     target = normalize_url(config.target)
     started_at = _utc_now()
-    crawler = Crawler(timeout=config.timeout)
+    crawler = Crawler(
+        timeout=config.timeout,
+        headers=config.headers,
+        cookies=config.cookies,
+        proxy=config.proxy,
+        crawl_delay=config.crawl_delay,
+        requests_per_second=config.requests_per_second,
+    )
     pages = crawler.crawl(target, max_pages=config.max_pages)
     findings = run_passive_checks(target, pages)
     if mode.runs_validation_probes:
-        findings.extend(run_probe_checks(target, timeout=config.timeout))
+        findings.extend(
+            run_probe_checks(
+                target,
+                timeout=config.timeout,
+                headers=config.headers,
+                cookies=config.cookies,
+                proxy=config.proxy,
+                crawl_delay=config.crawl_delay,
+                requests_per_second=config.requests_per_second,
+            )
+        )
     findings = _deduplicate_findings(findings)
     completed_at = _utc_now()
 
@@ -77,8 +94,6 @@ def scan(args: argparse.Namespace) -> int:
     print(f"Scan complete: {len(pages)} URLs discovered, {len(findings)} findings.")
     print(f"Mode: {mode.name} - {mode.description}")
     print(f"Profile: {config.profile}")
-    if config.headers or config.cookies or config.proxy:
-        print("Configured headers/cookies/proxy are parsed for repeatable scans; crawler transport support is planned next.")
     print(f"JSON report: {json_path}")
     print(f"HTML report: {html_path}")
     return 0
@@ -108,11 +123,11 @@ def build_parser() -> argparse.ArgumentParser:
     scan_parser.add_argument("--max-pages", type=int, help="Maximum same-host pages to crawl.")
     scan_parser.add_argument("--timeout", type=float, help="Per-request timeout in seconds.")
     scan_parser.add_argument("--output-dir", help="Directory for JSON and HTML reports.")
-    scan_parser.add_argument("--crawl-delay", type=float, help="Delay between crawl requests in seconds. Transport enforcement is planned next.")
-    scan_parser.add_argument("--requests-per-second", type=float, help="Target request rate. Transport enforcement is planned next.")
-    scan_parser.add_argument("--header", action="append", default=[], help="Custom header as 'Name: Value'. Transport support is planned next.")
-    scan_parser.add_argument("--cookie", action="append", default=[], help="Custom cookie as 'name=value'. Transport support is planned next.")
-    scan_parser.add_argument("--proxy", help="Proxy URL placeholder for repeatable scan config. Transport support is planned next.")
+    scan_parser.add_argument("--crawl-delay", type=float, help="Delay between crawl requests in seconds.")
+    scan_parser.add_argument("--requests-per-second", type=float, help="Target request rate.")
+    scan_parser.add_argument("--header", action="append", default=[], help="Custom header as 'Name: Value'.")
+    scan_parser.add_argument("--cookie", action="append", default=[], help="Custom cookie as 'name=value'.")
+    scan_parser.add_argument("--proxy", help="Proxy URL for HTTP and HTTPS requests.")
     scan_parser.add_argument(
         "--i-have-authorization",
         action="store_true",

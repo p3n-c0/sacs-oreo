@@ -28,10 +28,17 @@ class SafetyModeTests(unittest.TestCase):
     def test_passive_mode_skips_probe_checks(self):
         args = argparse.Namespace(
             target="https://example.com",
+            config=None,
+            profile=None,
             mode="passive",
             max_pages=1,
             timeout=1.0,
             output_dir="unused",
+            crawl_delay=None,
+            requests_per_second=None,
+            header=[],
+            cookie=[],
+            proxy=None,
             i_have_authorization=True,
         )
         pages = [DiscoveredURL(url="https://example.com/", status_code=200)]
@@ -46,13 +53,20 @@ class SafetyModeTests(unittest.TestCase):
         self.assertEqual(result, 0)
         probes.assert_not_called()
 
-    def test_safe_mode_runs_probe_checks(self):
+    def test_safe_mode_runs_probe_checks_with_transport_config(self):
         args = argparse.Namespace(
             target="https://example.com",
+            config=None,
+            profile=None,
             mode="safe",
             max_pages=1,
             timeout=1.0,
             output_dir="unused",
+            crawl_delay=0.2,
+            requests_per_second=1.5,
+            header=["X-Test: yes"],
+            cookie=["session=abc"],
+            proxy="http://127.0.0.1:8080",
             i_have_authorization=True,
         )
         pages = [DiscoveredURL(url="https://example.com/", status_code=200)]
@@ -80,7 +94,15 @@ class SafetyModeTests(unittest.TestCase):
                 result = cli.scan(args)
 
         self.assertEqual(result, 0)
-        probes.assert_called_once_with("https://example.com/", timeout=1.0)
+        probes.assert_called_once_with(
+            "https://example.com/",
+            timeout=1.0,
+            headers={"X-Test": "yes"},
+            cookies={"session": "abc"},
+            proxy="http://127.0.0.1:8080",
+            crawl_delay=0.2,
+            requests_per_second=1.5,
+        )
 
 
 if __name__ == "__main__":

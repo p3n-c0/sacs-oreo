@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import time
 from collections import deque
 from html.parser import HTMLParser
 from http.cookies import SimpleCookie
-from typing import Iterable
+from typing import Callable, Iterable
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin
-from urllib.request import Request, build_opener
+from urllib.request import ProxyHandler, Request, build_opener
 
 from .models import CookieInfo, DiscoveredURL, Form, FormInput
 from .url_utils import in_scope_url, normalize_url
@@ -78,11 +79,37 @@ def _detect_technologies(headers: dict[str, str], parser_technologies: Iterable[
     return sorted(technologies)
 
 
+def _format_cookie_header(cookies: dict[str, str]) -> str:
+    return "; ".join(f"{name}={value}" for name, value in cookies.items())
+
+
 class Crawler:
-    def __init__(self, timeout: float = 8.0, user_agent: str = "SACS-Oreo/0.1") -> None:
+    def __init__(
+        self,
+        timeout: float = 8.0,
+        user_agent: str = "SACS-Oreo/0.1",
+        headers: dict[str, str] | None = None,
+        cookies: dict[str, str] | None = None,
+        proxy: str | None = None,
+        crawl_delay: float = 0.0,
+        requests_per_second: float | None = None,
+        sleeper: Callable[[float], None] = time.sleep,
+        monotonic: Callable[[], float] = time.monotonic,
+    ) -> None:
         self.timeout = timeout
-        self.opener = build_opener()
         self.user_agent = user_agent
+        self.headers = dict(headers or {})
+        self.cookies = dict(cookies or {})
+        self.proxy = proxy
+        self.crawl_delay = max(0.0, crawl_delay)
+        self.requests_per_second = requests_per_second if requests_per_second and requests_per_second > 0 else None
+        self._sleeper = sleeper
+        self._monotonic = monotonic
+        self._last_request_at: float | None = None
+        if proxy:
+            self.opener = build_opener(ProxyHandler({"http": proxy, "https": proxy}))
+        else:
+            self.opener = build_opener()
 
     def crawl(self, base_url: str, max_pages: int = 50) -> list[DiscoveredURL]:
         normalized_base = normalize_url(base_url)
@@ -116,9 +143,11 @@ class Crawler:
         return discovered
 
     def fetch(self, url: str) -> DiscoveredURL:
-        request = Request(url, headers={"User-Agent": self.user_agent})
+        self._throttle()
+        request = Request(url, headers=self._request_headers())
         try:
             with self.opener.open(request, timeout=self.timeout) as response:
+                self._last_request_at = self._monotonic()
                 headers = dict(response.headers.items())
                 raw_body = response.read(1024 * 1024)
                 charset = response.headers.get_content_charset() or "utf-8"
@@ -133,6 +162,7 @@ class Crawler:
                 setattr(page, "_body", body)
                 return page
         except HTTPError as error:
+            self._last_request_at = self._monotonic()
             headers = dict(error.headers.items()) if error.headers else {}
             page = DiscoveredURL(
                 url=url,
@@ -149,4 +179,26 @@ class Crawler:
                 pass
             return page
         except (URLError, TimeoutError, OSError) as error:
+            self._last_request_at = self._monotonic()
             return DiscoveredURL(url=url, status_code=None, error=str(error))
+
+    def _request_headers(self) -> dict[str, str]:
+        headers = {"User-Agent": self.user_agent}
+        headers.update(self.headers)
+        header_names = {name.lower() for name in headers}
+        if self.cookies and "cookie" not in header_names:
+            headers["Cookie"] = _format_cookie_header(self.cookies)
+        return headers
+
+    def _throttle(self) -> None:
+        if self._last_request_at is None:
+            return
+        minimum_interval = self.crawl_delay
+        if self.requests_per_second:
+            minimum_interval = max(minimum_interval, 1.0 / self.requests_per_second)
+        if minimum_interval <= 0:
+            return
+        elapsed = self._monotonic() - self._last_request_at
+        remaining = minimum_interval - elapsed
+        if remaining > 0:
+            self._sleeper(remaining)

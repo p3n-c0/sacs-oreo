@@ -93,7 +93,7 @@ Available profiles:
 - `standard`: default safe review
 - `deep-safe`: larger safe review with slower pacing defaults
 
-Custom headers, cookies, proxy, crawl delay, and request-rate values are parsed for repeatability. Transport enforcement for those settings is the next v0.2.0 implementation slice.
+Custom headers, cookies, proxy, crawl delay, and request-rate values are applied to scanner HTTP requests for repeatable, controlled scans.
 ## Finding Schema
 
 Oreo findings use a stable structured format so JSON reports, HTML reports, dashboards, APIs, and future integrations can share the same data contract:

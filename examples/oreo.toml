@@ -11,12 +11,10 @@ output_dir = "reports/example"
 crawl_delay = 0.0
 requests_per_second = 1.0
 
-# Parsed now for repeatability. Transport support lands in the next v0.2.0 slice.
 [scan.headers]
 User-Agent = "SACS-Oreo/0.1"
 
 [scan.cookies]
 # session = "replace-with-authorized-test-cookie"
 
-# Parsed now for repeatability. Transport support lands in the next v0.2.0 slice.
 # proxy = "http://127.0.0.1:8080"

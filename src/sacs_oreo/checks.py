@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from urllib.parse import urlsplit
-from urllib.request import Request, build_opener
+from urllib.request import Request
 
 from .crawler import Crawler
 from .findings import build_finding
@@ -104,8 +104,23 @@ def check_interesting_document(page: DiscoveredURL) -> list[Finding]:
     return []
 
 
-def run_probe_checks(base_url: str, timeout: float = 8.0) -> list[Finding]:
-    crawler = Crawler(timeout=timeout)
+def run_probe_checks(
+    base_url: str,
+    timeout: float = 8.0,
+    headers: dict[str, str] | None = None,
+    cookies: dict[str, str] | None = None,
+    proxy: str | None = None,
+    crawl_delay: float = 0.0,
+    requests_per_second: float | None = None,
+) -> list[Finding]:
+    crawler = Crawler(
+        timeout=timeout,
+        headers=headers,
+        cookies=cookies,
+        proxy=proxy,
+        crawl_delay=crawl_delay,
+        requests_per_second=requests_per_second,
+    )
     findings: list[Finding] = []
     base = normalize_url(base_url)
     for path in (*SENSITIVE_FILES, "robots.txt", "sitemap.xml"):
@@ -119,53 +134,54 @@ def run_probe_checks(base_url: str, timeout: float = 8.0) -> list[Finding]:
                 build_finding("content.sensitive_file", probe_url, f"{path} returned HTTP 200")
             )
         findings.extend(check_directory_listing(page))
-    findings.extend(check_cors(base, timeout=timeout))
-    findings.extend(check_reflected_xss(base, timeout=timeout))
-    findings.extend(check_sql_errors(base, timeout=timeout))
+    findings.extend(check_cors(base, crawler))
+    findings.extend(check_reflected_xss(base, crawler))
+    findings.extend(check_sql_errors(base, crawler))
     return findings
 
 
-def check_cors(url: str, timeout: float = 8.0) -> list[Finding]:
-    opener = build_opener()
-    origin = "https://oreo.invalid"
-    request = Request(url, headers={"User-Agent": "SACS-Oreo/0.1", "Origin": origin})
+def check_cors(url: str, crawler: Crawler) -> list[Finding]:
+    headers = crawler._request_headers()
+    headers["Origin"] = "https://oreo.invalid"
+    request = Request(url, headers=headers)
     try:
-        with opener.open(request, timeout=timeout) as response:
-            headers = {key.lower(): value for key, value in response.headers.items()}
+        crawler._throttle()
+        with crawler.opener.open(request, timeout=crawler.timeout) as response:
+            crawler._last_request_at = crawler._monotonic()
+            response_headers = {key.lower(): value for key, value in response.headers.items()}
     except OSError:
         return []
 
-    allow_origin = headers.get("access-control-allow-origin", "")
-    allow_credentials = headers.get("access-control-allow-credentials", "").lower()
+    allow_origin = response_headers.get("access-control-allow-origin", "")
+    allow_credentials = response_headers.get("access-control-allow-credentials", "").lower()
     if allow_origin == "*" and allow_credentials == "true":
         severity = "High"
         evidence = "Access-Control-Allow-Origin: * with credentials enabled"
-    elif allow_origin == origin:
+    elif allow_origin == "https://oreo.invalid":
         severity = "Medium"
-        evidence = f"Origin {origin} was reflected in Access-Control-Allow-Origin"
+        evidence = "Origin https://oreo.invalid was reflected in Access-Control-Allow-Origin"
     else:
         return []
 
     return [build_finding("cors.origin", url, evidence, severity=severity)]
 
 
-def _fetch_probe_body(url: str, timeout: float) -> tuple[int | None, str]:
-    crawler = Crawler(timeout=timeout)
+def _fetch_probe_body(url: str, crawler: Crawler) -> tuple[int | None, str]:
     page = crawler.fetch(url)
     return page.status_code, getattr(page, "_body", "")
 
 
-def check_reflected_xss(url: str, timeout: float = 8.0) -> list[Finding]:
+def check_reflected_xss(url: str, crawler: Crawler) -> list[Finding]:
     probe_url = add_query_param(url, "oreo_xss", XSS_PAYLOAD)
-    status, body = _fetch_probe_body(probe_url, timeout)
+    status, body = _fetch_probe_body(probe_url, crawler)
     if status and status < 500 and XSS_PAYLOAD in body:
         return [build_finding("xss.reflection", probe_url, f"Reflected marker {XSS_PAYLOAD}")]
     return []
 
 
-def check_sql_errors(url: str, timeout: float = 8.0) -> list[Finding]:
+def check_sql_errors(url: str, crawler: Crawler) -> list[Finding]:
     probe_url = add_query_param(url, "oreo_sql", SQL_PROBE)
-    status, body = _fetch_probe_body(probe_url, timeout)
+    status, body = _fetch_probe_body(probe_url, crawler)
     if status and any(re.search(pattern, body, re.IGNORECASE) for pattern in SQL_ERROR_PATTERNS):
         return [build_finding("sql.error_pattern", probe_url, "Response matched a known SQL error pattern")]
     return []

@@ -76,9 +76,22 @@ Config files may define:
 - request rate
 - custom headers
 - custom cookies
-- proxy placeholder
+- proxy URL
 
 CLI options may override config values for one-off adjustments.
+## Transport Controls
+
+Repeatable scan settings should be enforced by the scanner transport, not only stored in config files.
+
+Oreo applies:
+
+- custom headers to crawler and probe requests
+- custom cookies through the Cookie header unless the operator provides a Cookie header manually
+- proxy settings for HTTP and HTTPS requests
+- crawl delay before subsequent requests
+- request-rate limits using the slowest configured interval
+
+These controls help authorized operators avoid accidental noisy scans and make scan behavior easier to reproduce.
 ## What Oreo Does Not Do
 
 Oreo does not aim to be an exploit launcher.
