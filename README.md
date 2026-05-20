@@ -73,6 +73,27 @@ Reports are written to the selected output directory:
 - `oreo-report.json`
 - `oreo-report.html`
 
+## Repeatable Scan Config
+
+Oreo supports TOML and JSON config files for repeatable scans. YAML is planned, but not enabled in this build.
+
+```powershell
+sacs-oreo scan --config examples/oreo.toml --i-have-authorization
+```
+
+Config values can be overridden from the CLI:
+
+```powershell
+sacs-oreo scan --config examples/oreo.toml --profile quick --mode passive --max-pages 10 --i-have-authorization
+```
+
+Available profiles:
+
+- `quick`: low-touch passive review with fewer pages
+- `standard`: default safe review
+- `deep-safe`: larger safe review with slower pacing defaults
+
+Custom headers, cookies, proxy, crawl delay, and request-rate values are parsed for repeatability. Transport enforcement for those settings is the next v0.2.0 implementation slice.
 ## Finding Schema
 
 Oreo findings use a stable structured format so JSON reports, HTML reports, dashboards, APIs, and future integrations can share the same data contract:
