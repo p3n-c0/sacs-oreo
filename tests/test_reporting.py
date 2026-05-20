@@ -13,6 +13,7 @@ class ReportingTests(unittest.TestCase):
             tool="SACS Oreo",
             version="0.1.0",
             target="https://example.com/",
+            scan_mode="safe",
             started_at="2026-05-20T00:00:00+00:00",
             completed_at="2026-05-20T00:00:01+00:00",
             authorization_confirmed=True,
@@ -39,10 +40,11 @@ class ReportingTests(unittest.TestCase):
             html = html_path.read_text(encoding="utf-8")
 
         self.assertEqual(parsed["tool"], "SACS Oreo")
+        self.assertEqual(parsed["scan_mode"], "safe")
+        self.assertIn("Scan mode:", html)
         self.assertIn("Test finding", html)
         self.assertIn("https://example.com/", html)
 
 
 if __name__ == "__main__":
     unittest.main()
-

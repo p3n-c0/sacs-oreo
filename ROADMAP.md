@@ -5,6 +5,7 @@ This roadmap keeps Oreo powerful while preserving an authorized, non-destructive
 ## v0.1.0 - MVP / Variant 1
 
 - Authorization-gated CLI
+- Scan safety model with passive, safe, and active modes
 - Same-host crawler
 - Passive response analysis
 - Safe checks:

@@ -10,7 +10,7 @@ Only run Oreo against systems where you have explicit written authorization. Use
 
 Oreo is designed around minimally invasive assessment techniques intended to reduce operational risk to target systems.
 
-Oreo prioritizes exposure analysis, misconfiguration detection, and evidence-based reporting over exploit automation. The project is not intended to become an exploit launcher.
+Oreo prioritizes exposure analysis, misconfiguration detection, and evidence-based reporting over exploit automation. Its scan modes are intended to make testing intensity explicit: passive, safe, and controlled active testing. The project is not intended to become an exploit launcher.
 
 Contributions that add credential attacks, brute force, exploit chaining, authentication bypass, denial-of-service behavior, destructive payloads, or auth-abuse workflows will not be accepted.
 

@@ -56,6 +56,7 @@ def write_html_report(report: ScanReport, output_path: Path) -> Path:
   <h1>SACS Oreo Security Assessment Report</h1>
   <div class="meta">
     <p><strong>Target:</strong> {html.escape(report.target)}</p>
+    <p><strong>Scan mode:</strong> {html.escape(report.scan_mode)}</p>
     <p><strong>Started:</strong> {html.escape(report.started_at)}</p>
     <p><strong>Completed:</strong> {html.escape(report.completed_at)}</p>
     <p><strong>Authorization confirmed:</strong> {report.authorization_confirmed}</p>
@@ -81,4 +82,3 @@ def write_html_report(report: ScanReport, output_path: Path) -> Path:
 """
     output_path.write_text(document, encoding="utf-8")
     return output_path
-

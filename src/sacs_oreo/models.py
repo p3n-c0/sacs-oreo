@@ -57,6 +57,7 @@ class ScanReport:
     tool: str
     version: str
     target: str
+    scan_mode: str
     started_at: str
     completed_at: str
     authorization_confirmed: bool
@@ -64,4 +65,7 @@ class ScanReport:
     findings: list[Finding]
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        data = asdict(self)
+        for page in data["discovered_urls"]:
+            page.pop("_body", None)
+        return data
