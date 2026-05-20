@@ -27,6 +27,7 @@ class ReportingTests(unittest.TestCase):
                     owasp="A05:2021",
                     affected_url="https://example.com/",
                     evidence="evidence",
+                    business_impact="This can reduce customer trust for a growing SME.",
                     recommendation="fix",
                     references=[],
                 )
@@ -46,11 +47,13 @@ class ReportingTests(unittest.TestCase):
         self.assertEqual(finding["id"], "OREO-999")
         self.assertEqual(finding["category"], "Test Category")
         self.assertEqual(finding["owasp"], "A05:2021")
+        self.assertEqual(finding["business_impact"], "This can reduce customer trust for a growing SME.")
         self.assertEqual(finding["recommendation"], "fix")
         self.assertEqual(finding["references"], [])
         self.assertIn("Scan mode:", html)
         self.assertIn("OREO-999", html)
         self.assertIn("Test finding", html)
+        self.assertIn("Business Impact", html)
         self.assertIn("Recommendation", html)
         self.assertIn("https://example.com/", html)
 

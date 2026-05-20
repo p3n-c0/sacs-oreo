@@ -10,6 +10,11 @@ class FindingCatalogTests(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         self.assertTrue(all(finding_id.startswith("OREO-") for finding_id in ids))
 
+    def test_catalog_templates_include_business_impact(self):
+        for template in FINDING_CATALOG.values():
+            self.assertTrue(template.business_impact.strip())
+            self.assertGreater(len(template.business_impact), 40)
+
     def test_build_finding_uses_structured_schema(self):
         finding = build_finding(
             "headers.csp",
@@ -23,6 +28,7 @@ class FindingCatalogTests(unittest.TestCase):
         self.assertEqual(finding.affected_url, "https://example.com/")
         self.assertEqual(finding.references, [])
         self.assertIn("Content-Security-Policy", finding.recommendation)
+        self.assertIn("fintech", finding.business_impact.lower())
 
 
 if __name__ == "__main__":

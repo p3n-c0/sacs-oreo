@@ -18,6 +18,7 @@ Oreo is at **MVP / Variant 1** stage. It is suitable as a foundation for a profe
 - Severity labels: Informational, Low, Medium, High, Critical
 - OWASP Top 10 mappings where applicable
 - Remediation guidance for every finding
+- Nigeria/Africa SME business impact notes in findings
 - JSON and HTML report generation
 - Unit tests for core URL, crawler, check, and report behavior
 
@@ -83,12 +84,16 @@ Oreo findings use a stable structured format so JSON reports, HTML reports, dash
   "owasp": "A05:2021",
   "affected_url": "https://example.com/",
   "evidence": "content-security-policy absent from response headers",
+  "business_impact": "This can make it easier for a successful script injection issue to affect customers. For fintech, e-commerce, school portals, NGOs, clinics, and member platforms collecting personal data, fix this before public launch or major campaigns.",
   "recommendation": "Add a restrictive Content-Security-Policy header to reduce script injection and data exfiltration risk.",
   "references": []
 }
 ```
 
 Finding definitions are centralized in `src/sacs_oreo/findings.py`.
+
+The `business_impact` field is written for owners and operators, not only engineers. It explains how a weakness can affect customer trust, launch readiness, data handling, or daily operations for SMEs across Nigeria and Africa.
+
 ## Tests
 
 ```powershell

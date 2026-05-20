@@ -49,6 +49,7 @@ class Finding:
     owasp: str | None
     affected_url: str
     evidence: str
+    business_impact: str
     recommendation: str
     references: list[str] = field(default_factory=list)
 

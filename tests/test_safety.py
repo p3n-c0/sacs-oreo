@@ -64,6 +64,7 @@ class SafetyModeTests(unittest.TestCase):
             owasp=None,
             affected_url="https://example.com/",
             evidence="evidence",
+            business_impact="This can reduce customer trust for a growing SME.",
             recommendation="fix",
             references=[],
         )
