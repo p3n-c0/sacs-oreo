@@ -1,25 +1,70 @@
+# Python bytecode
 __pycache__/
 *.py[cod]
 *$py.class
 
+# Virtual environments
 .Python
 .venv/
 venv/
 env/
 ENV/
 
+# Build artifacts
 build/
 dist/
 *.egg-info/
+pip-wheel-metadata/
 
+# Testing & coverage
 .pytest_cache/
 .coverage
 htmlcov/
+.mypy_cache/
+.ruff_cache/
 
+# Reports & scan outputs
 reports/
+scan_outputs/
+evidence/
 *.log
+*.jsonl
 
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# IDE/editor
 .idea/
 .vscode/
+
+# OS files
 .DS_Store
 Thumbs.db
+
+# Playwright / browser tooling
+playwright-report/
+test-results/
+
+# Packaging
+*.tar.gz
+*.zip
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Security tooling artifacts
+screenshots/
+captures/
+exports/
+
+# Node modules (future dashboard/frontend)
+node_modules/
