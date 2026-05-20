@@ -13,17 +13,19 @@ class HeaderCheckTests(unittest.TestCase):
         )
 
         titles = {finding.title for finding in check_security_headers(page)}
+        ids = {finding.id for finding in check_security_headers(page)}
 
-        self.assertIn("Missing Content-Security-Policy header", titles)
-        self.assertIn("Missing Strict-Transport-Security header", titles)
-        self.assertIn("Missing X-Content-Type-Options header", titles)
+        self.assertIn("Missing Content Security Policy", titles)
+        self.assertIn("Missing Strict Transport Security", titles)
+        self.assertIn("Missing X-Content-Type-Options", titles)
+        self.assertIn("OREO-001", ids)
 
     def test_hsts_not_required_for_plain_http_response(self):
         page = DiscoveredURL(url="http://example.com/", status_code=200, response_headers={})
 
         titles = {finding.title for finding in check_security_headers(page)}
 
-        self.assertNotIn("Missing Strict-Transport-Security header", titles)
+        self.assertNotIn("Missing Strict Transport Security", titles)
 
 
 class CookieCheckTests(unittest.TestCase):
@@ -34,9 +36,9 @@ class CookieCheckTests(unittest.TestCase):
             cookies=[CookieInfo(name="session", value="abc", attributes={})],
         )
 
-        check_ids = {finding.check_id for finding in check_cookies(page)}
+        finding_ids = {finding.id for finding in check_cookies(page)}
 
-        self.assertEqual(check_ids, {"cookies.secure", "cookies.httponly", "cookies.samesite"})
+        self.assertEqual(finding_ids, {"OREO-007", "OREO-008", "OREO-009"})
 
     def test_secure_cookie_is_not_flagged_for_secure_attribute(self):
         page = DiscoveredURL(
@@ -56,4 +58,3 @@ class CookieCheckTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

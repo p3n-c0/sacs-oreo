@@ -20,14 +20,15 @@ class ReportingTests(unittest.TestCase):
             discovered_urls=[DiscoveredURL(url="https://example.com/", status_code=200)],
             findings=[
                 Finding(
+                    id="OREO-999",
                     title="Test finding",
                     severity="Low",
-                    description="desc",
-                    evidence="evidence",
+                    category="Test Category",
+                    owasp="A05:2021",
                     affected_url="https://example.com/",
-                    owasp_category="OWASP A05:2021 - Security Misconfiguration",
-                    remediation="fix",
-                    check_id="test.finding",
+                    evidence="evidence",
+                    recommendation="fix",
+                    references=[],
                 )
             ],
         )
@@ -39,10 +40,18 @@ class ReportingTests(unittest.TestCase):
             parsed = json.loads(json_path.read_text(encoding="utf-8"))
             html = html_path.read_text(encoding="utf-8")
 
+        finding = parsed["findings"][0]
         self.assertEqual(parsed["tool"], "SACS Oreo")
         self.assertEqual(parsed["scan_mode"], "safe")
+        self.assertEqual(finding["id"], "OREO-999")
+        self.assertEqual(finding["category"], "Test Category")
+        self.assertEqual(finding["owasp"], "A05:2021")
+        self.assertEqual(finding["recommendation"], "fix")
+        self.assertEqual(finding["references"], [])
         self.assertIn("Scan mode:", html)
+        self.assertIn("OREO-999", html)
         self.assertIn("Test finding", html)
+        self.assertIn("Recommendation", html)
         self.assertIn("https://example.com/", html)
 
 

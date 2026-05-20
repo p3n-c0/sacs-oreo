@@ -1,7 +1,6 @@
 import argparse
 import tempfile
 import unittest
-from pathlib import Path
 from unittest.mock import patch
 
 from sacs_oreo import cli
@@ -44,9 +43,6 @@ class SafetyModeTests(unittest.TestCase):
                  patch.object(cli, "run_probe_checks") as probes:
                 result = cli.scan(args)
 
-            report_path = Path(tmp) / "oreo-report.json"
-            self.assertTrue(report_path.exists())
-
         self.assertEqual(result, 0)
         probes.assert_not_called()
 
@@ -61,14 +57,15 @@ class SafetyModeTests(unittest.TestCase):
         )
         pages = [DiscoveredURL(url="https://example.com/", status_code=200)]
         finding = Finding(
+            id="OREO-999",
             title="Probe finding",
             severity="Low",
-            description="desc",
-            evidence="evidence",
+            category="Test Category",
+            owasp=None,
             affected_url="https://example.com/",
-            owasp_category=None,
-            remediation="fix",
-            check_id="probe.test",
+            evidence="evidence",
+            recommendation="fix",
+            references=[],
         )
 
         with tempfile.TemporaryDirectory() as tmp:

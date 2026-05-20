@@ -70,6 +70,25 @@ Reports are written to the selected output directory:
 - `oreo-report.json`
 - `oreo-report.html`
 
+## Finding Schema
+
+Oreo findings use a stable structured format so JSON reports, HTML reports, dashboards, APIs, and future integrations can share the same data contract:
+
+```json
+{
+  "id": "OREO-001",
+  "title": "Missing Content Security Policy",
+  "severity": "Medium",
+  "category": "Security Headers",
+  "owasp": "A05:2021",
+  "affected_url": "https://example.com/",
+  "evidence": "content-security-policy absent from response headers",
+  "recommendation": "Add a restrictive Content-Security-Policy header to reduce script injection and data exfiltration risk.",
+  "references": []
+}
+```
+
+Finding definitions are centralized in `src/sacs_oreo/findings.py`.
 ## Tests
 
 ```powershell

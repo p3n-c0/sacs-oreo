@@ -17,12 +17,14 @@ def write_html_report(report: ScanReport, output_path: Path) -> Path:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     findings_rows = "\n".join(
         "<tr>"
+        f"<td>{html.escape(finding.id)}</td>"
         f"<td>{html.escape(finding.severity)}</td>"
+        f"<td>{html.escape(finding.category)}</td>"
         f"<td>{html.escape(finding.title)}</td>"
         f"<td><a href=\"{html.escape(finding.affected_url)}\">{html.escape(finding.affected_url)}</a></td>"
-        f"<td>{html.escape(finding.owasp_category or 'N/A')}</td>"
+        f"<td>{html.escape(finding.owasp or 'N/A')}</td>"
         f"<td>{html.escape(finding.evidence)}</td>"
-        f"<td>{html.escape(finding.remediation)}</td>"
+        f"<td>{html.escape(finding.recommendation)}</td>"
         "</tr>"
         for finding in report.findings
     )
@@ -66,9 +68,9 @@ def write_html_report(report: ScanReport, output_path: Path) -> Path:
   <h2>Findings</h2>
   <table>
     <thead>
-      <tr><th>Severity</th><th>Title</th><th>URL</th><th>OWASP</th><th>Evidence</th><th>Remediation</th></tr>
+      <tr><th>ID</th><th>Severity</th><th>Category</th><th>Title</th><th>URL</th><th>OWASP</th><th>Evidence</th><th>Recommendation</th></tr>
     </thead>
-    <tbody>{findings_rows or '<tr><td colspan="6">No findings recorded.</td></tr>'}</tbody>
+    <tbody>{findings_rows or '<tr><td colspan="8">No findings recorded.</td></tr>'}</tbody>
   </table>
   <h2>Discovered URLs</h2>
   <table>

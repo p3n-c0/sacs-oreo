@@ -42,14 +42,15 @@ class DiscoveredURL:
 
 @dataclass(slots=True)
 class Finding:
+    id: str
     title: str
     severity: str
-    description: str
-    evidence: str
+    category: str
+    owasp: str | None
     affected_url: str
-    owasp_category: str | None
-    remediation: str
-    check_id: str
+    evidence: str
+    recommendation: str
+    references: list[str] = field(default_factory=list)
 
 
 @dataclass(slots=True)
