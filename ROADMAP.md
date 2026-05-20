@@ -1,4 +1,4 @@
-﻿# Roadmap
+# Roadmap
 
 This roadmap keeps Oreo powerful while preserving an authorized, non-destructive assessment model.
 
@@ -40,6 +40,7 @@ This roadmap keeps Oreo powerful while preserving an authorized, non-destructive
 - Severity scoring refinement
 - Remediation guidance
 - Executive summary
+- docs/methodology.md covering testing approach, evidence handling, confidence, severity, and false positives
 
 ## v0.4.0 - Engineering Integration
 
@@ -48,6 +49,7 @@ This roadmap keeps Oreo powerful while preserving an authorized, non-destructive
 - Packaged release builds
 - Baseline comparison
 - Scan diffing
+- SECURITY_CONTACT.md with disclosure contact, supported versions, and response expectations
 
 ## v0.5.0 - Plugin & Intelligence Layer
 
