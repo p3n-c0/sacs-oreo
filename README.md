@@ -108,6 +108,10 @@ $env:PYTHONPATH = "$PWD\src"
 python -m unittest discover -s tests
 ```
 
+## Methodology
+
+See [docs/methodology.md](docs/methodology.md) for Oreo's assessment philosophy, evidence model, confidence scoring, reproducibility, and false-positive handling.
+
 ## Roadmap
 
 See [ROADMAP.md](ROADMAP.md).
