@@ -20,6 +20,7 @@ classifiers = [
     "Topic :: Security",
 ]
 dependencies = [
+    "PyYAML>=6.0.2",
     "tomli>=2.0.1; python_version < '3.11'",
 ]
 

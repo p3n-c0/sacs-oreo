@@ -109,7 +109,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     scan_parser = subparsers.add_parser("scan", help="Run an authorized scan against a target URL.")
     scan_parser.add_argument("target", nargs="?", help="Base URL to scan. Can also be provided in a config file.")
-    scan_parser.add_argument("--config", help="Path to a TOML or JSON scan config file.")
+    scan_parser.add_argument("--config", help="Path to a TOML, YAML, or JSON scan config file.")
     scan_parser.add_argument(
         "--profile",
         choices=sorted(SCAN_PROFILES),

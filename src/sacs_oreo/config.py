@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+import yaml
 
 try:
     import tomllib
 except ModuleNotFoundError:  # pragma: no cover - exercised on Python 3.10 in CI
     import tomli as tomllib
-
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any
 
 from .safety import DEFAULT_SCAN_MODE, SCAN_MODES
 
@@ -91,16 +92,18 @@ def load_scan_config(path: str | Path | None) -> ScanConfig:
     suffix = config_path.suffix.lower()
     if suffix == ".toml":
         data = tomllib.loads(raw)
-    elif suffix in {".json", ".yaml", ".yml"}:
-        if suffix in {".yaml", ".yml"}:
-            raise ValueError("YAML config support is planned, but this build currently supports TOML and JSON config files.")
+    elif suffix == ".json":
         data = json.loads(raw)
+    elif suffix in {".yaml", ".yml"}:
+        data = yaml.safe_load(raw) or {}
     else:
-        raise ValueError("Unsupported config file type. Use .toml or .json for now.")
+        raise ValueError("Unsupported config file type. Use .toml, .yaml, .yml, or .json.")
 
+    if not isinstance(data, dict):
+        raise ValueError("Scan config must be an object or contain a scan object.")
     scan_data = data.get("scan", data)
     if not isinstance(scan_data, dict):
-        raise ValueError("Scan config must be an object or contain a [scan] object.")
+        raise ValueError("Scan config must be an object or contain a scan object.")
 
     return ScanConfig(
         target=_optional_str(scan_data.get("target")),
