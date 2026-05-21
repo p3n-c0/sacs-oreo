@@ -126,12 +126,49 @@ X-Config = "yes"
         with self.assertRaisesRegex(ValueError, "target URL is required"):
             resolve_scan_config(args)
 
-    def test_yaml_reports_planned_support(self):
+    def test_load_yaml_scan_config(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "oreo.yaml"
-            path.write_text("scan:\n  target: https://example.com\n", encoding="utf-8")
+            path.write_text(
+                """
+scan:
+  target: https://example.com
+  profile: quick
+  mode: passive
+  max_pages: 12
+  timeout: 4
+  output_dir: reports/yaml
+  crawl_delay: 0.2
+  requests_per_second: 0.5
+  headers:
+    User-Agent: SACS-Oreo-YAML-Test
+  cookies:
+    session: yaml-cookie
+  proxy: http://127.0.0.1:8080
+""".strip(),
+                encoding="utf-8",
+            )
 
-            with self.assertRaisesRegex(ValueError, "YAML config support is planned"):
+            config = load_scan_config(path)
+
+        self.assertEqual(config.target, "https://example.com")
+        self.assertEqual(config.profile, "quick")
+        self.assertEqual(config.mode, "passive")
+        self.assertEqual(config.max_pages, 12)
+        self.assertEqual(config.timeout, 4.0)
+        self.assertEqual(config.output_dir, "reports/yaml")
+        self.assertEqual(config.crawl_delay, 0.2)
+        self.assertEqual(config.requests_per_second, 0.5)
+        self.assertEqual(config.headers["User-Agent"], "SACS-Oreo-YAML-Test")
+        self.assertEqual(config.cookies["session"], "yaml-cookie")
+        self.assertEqual(config.proxy, "http://127.0.0.1:8080")
+
+    def test_config_must_be_mapping(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "oreo.yaml"
+            path.write_text("- https://example.com\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "Scan config must be an object"):
                 load_scan_config(path)
 
 

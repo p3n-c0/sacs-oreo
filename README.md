@@ -75,10 +75,11 @@ Reports are written to the selected output directory:
 
 ## Repeatable Scan Config
 
-Oreo supports TOML and JSON config files for repeatable scans. YAML is planned, but not enabled in this build.
+Oreo supports TOML, YAML, and JSON config files for repeatable scans.
 
 ```powershell
 sacs-oreo scan --config examples/oreo.toml --i-have-authorization
+sacs-oreo scan --config examples/oreo.yaml --i-have-authorization
 ```
 
 Config values can be overridden from the CLI:

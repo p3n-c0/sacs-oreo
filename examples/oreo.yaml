@@ -1,0 +1,16 @@
+# SACS Oreo repeatable scan configuration example.
+# Copy this file and adjust values for an authorized target.
+
+scan:
+  target: https://example.com
+  profile: standard
+  mode: safe
+  max_pages: 50
+  timeout: 8
+  output_dir: reports/example
+  crawl_delay: 0.0
+  requests_per_second: 1.0
+  headers:
+    User-Agent: SACS-Oreo/0.1
+  cookies: {}
+  # proxy: http://127.0.0.1:8080
