@@ -4,6 +4,10 @@ SACS Oreo is a Python CLI for authorized web application security assessment, cr
 
 > Legal notice: use Oreo only on systems you own or have explicit written authorization to test. This MVP does not perform brute force, credential attacks, authentication bypass, exploit chaining, denial-of-service behavior, or destructive payload execution.
 
+## Security Engineering
+
+Oreo is developed as security software. Changes should follow the [Security Engineering Standard](docs/security-engineering.md), including authorization-first behavior, safe defaults, bounded request behavior, safe parsing, escaped report output, dependency discipline, and pre-merge security checks.
+
 ## Current Stage
 
 Oreo is at **MVP / Variant 1** stage. It is suitable as a foundation for a professional web application vulnerability analyzer, but it is not yet a mature replacement for a full assessment platform.
