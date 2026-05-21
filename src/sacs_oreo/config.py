@@ -14,6 +14,15 @@ except ModuleNotFoundError:  # pragma: no cover - exercised on Python 3.10 in CI
 
 from .safety import DEFAULT_SCAN_MODE, SCAN_MODES
 
+MIN_MAX_PAGES = 1
+MAX_MAX_PAGES = 1000
+MIN_TIMEOUT = 0.1
+MAX_TIMEOUT = 60.0
+MIN_CRAWL_DELAY = 0.0
+MAX_CRAWL_DELAY = 60.0
+MIN_REQUESTS_PER_SECOND = 0.1
+MAX_REQUESTS_PER_SECOND = 20.0
+
 
 @dataclass(frozen=True, slots=True)
 class ScanProfile:
@@ -109,11 +118,11 @@ def load_scan_config(path: str | Path | None) -> ScanConfig:
         target=_optional_str(scan_data.get("target")),
         mode=_optional_str(scan_data.get("mode")),
         profile=_optional_str(scan_data.get("profile")) or "standard",
-        max_pages=_optional_int(scan_data.get("max_pages")),
-        timeout=_optional_float(scan_data.get("timeout")),
+        max_pages=_optional_int(scan_data.get("max_pages"), "max_pages"),
+        timeout=_optional_float(scan_data.get("timeout"), "timeout"),
         output_dir=_optional_str(scan_data.get("output_dir")),
-        crawl_delay=_optional_float(scan_data.get("crawl_delay")),
-        requests_per_second=_optional_float(scan_data.get("requests_per_second")),
+        crawl_delay=_optional_float(scan_data.get("crawl_delay"), "crawl_delay"),
+        requests_per_second=_optional_float(scan_data.get("requests_per_second"), "requests_per_second"),
         headers=_string_map(scan_data.get("headers", {}), "headers"),
         cookies=_string_map(scan_data.get("cookies", {}), "cookies"),
         proxy=_optional_str(scan_data.get("proxy")),
@@ -134,19 +143,25 @@ def resolve_scan_config(args: Any) -> EffectiveScanConfig:
         supported = ", ".join(sorted(SCAN_MODES))
         raise ValueError(f"Unsupported scan mode '{mode}'. Supported modes: {supported}.")
 
-    return EffectiveScanConfig(
+    config = EffectiveScanConfig(
         target=target,
         mode=mode,
         profile=profile.name,
-        max_pages=getattr(args, "max_pages", None) or file_config.max_pages or profile.max_pages,
-        timeout=getattr(args, "timeout", None) or file_config.timeout or profile.timeout,
-        output_dir=getattr(args, "output_dir", None) or file_config.output_dir or "reports",
-        crawl_delay=getattr(args, "crawl_delay", None) if getattr(args, "crawl_delay", None) is not None else (file_config.crawl_delay if file_config.crawl_delay is not None else profile.crawl_delay),
-        requests_per_second=getattr(args, "requests_per_second", None) if getattr(args, "requests_per_second", None) is not None else (file_config.requests_per_second if file_config.requests_per_second is not None else profile.requests_per_second),
+        max_pages=_first_present(getattr(args, "max_pages", None), file_config.max_pages, profile.max_pages),
+        timeout=_first_present(getattr(args, "timeout", None), file_config.timeout, profile.timeout),
+        output_dir=_first_present(getattr(args, "output_dir", None), file_config.output_dir, "reports"),
+        crawl_delay=_first_present(getattr(args, "crawl_delay", None), file_config.crawl_delay, profile.crawl_delay),
+        requests_per_second=_first_present(
+            getattr(args, "requests_per_second", None),
+            file_config.requests_per_second,
+            profile.requests_per_second,
+        ),
         headers={**file_config.headers, **_parse_key_value_pairs(getattr(args, "header", None) or [], "header")},
         cookies={**file_config.cookies, **_parse_key_value_pairs(getattr(args, "cookie", None) or [], "cookie")},
         proxy=getattr(args, "proxy", None) or file_config.proxy,
     )
+    _validate_effective_config(config)
+    return config
 
 
 def _get_profile(name: str) -> ScanProfile:
@@ -163,16 +178,29 @@ def _optional_str(value: Any) -> str | None:
     return str(value)
 
 
-def _optional_int(value: Any) -> int | None:
+def _optional_int(value: Any, field_name: str) -> int | None:
     if value is None:
         return None
-    return int(value)
+    if isinstance(value, bool):
+        raise ValueError(f"Config field '{field_name}' must be an integer.")
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as error:
+        raise ValueError(f"Config field '{field_name}' must be an integer.") from error
+    if isinstance(value, float) and not value.is_integer():
+        raise ValueError(f"Config field '{field_name}' must be an integer.")
+    return parsed
 
 
-def _optional_float(value: Any) -> float | None:
+def _optional_float(value: Any, field_name: str) -> float | None:
     if value is None:
         return None
-    return float(value)
+    if isinstance(value, bool):
+        raise ValueError(f"Config field '{field_name}' must be a number.")
+    try:
+        return float(value)
+    except (TypeError, ValueError) as error:
+        raise ValueError(f"Config field '{field_name}' must be a number.") from error
 
 
 def _string_map(value: Any, field_name: str) -> dict[str, str]:
@@ -197,3 +225,37 @@ def _parse_key_value_pairs(values: list[str], label: str) -> dict[str, str]:
             raise ValueError(f"Invalid {label} value '{value}'. Name cannot be empty.")
         parsed[key] = item.strip()
     return parsed
+
+
+def _first_present(*values: Any) -> Any:
+    for value in values:
+        if value is not None:
+            return value
+    raise ValueError("Internal error: missing required configuration value.")
+
+
+def _validate_effective_config(config: EffectiveScanConfig) -> None:
+    _validate_int_range("max_pages", config.max_pages, MIN_MAX_PAGES, MAX_MAX_PAGES)
+    _validate_float_range("timeout", config.timeout, MIN_TIMEOUT, MAX_TIMEOUT)
+    _validate_float_range("crawl_delay", config.crawl_delay, MIN_CRAWL_DELAY, MAX_CRAWL_DELAY)
+    if config.requests_per_second is not None:
+        _validate_float_range(
+            "requests_per_second",
+            config.requests_per_second,
+            MIN_REQUESTS_PER_SECOND,
+            MAX_REQUESTS_PER_SECOND,
+        )
+
+
+def _validate_int_range(field_name: str, value: int, minimum: int, maximum: int) -> None:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"Config field '{field_name}' must be an integer.")
+    if value < minimum or value > maximum:
+        raise ValueError(f"Config field '{field_name}' must be between {minimum} and {maximum}.")
+
+
+def _validate_float_range(field_name: str, value: float, minimum: float, maximum: float) -> None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"Config field '{field_name}' must be a number.")
+    if value < minimum or value > maximum:
+        raise ValueError(f"Config field '{field_name}' must be between {minimum:g} and {maximum:g}.")
