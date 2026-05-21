@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 import json
-import tomllib
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised on Python 3.10 in CI
+    import tomli as tomllib
+
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
