@@ -99,6 +99,14 @@ Available profiles:
 - `deep-safe`: larger safe review with slower pacing defaults
 
 Custom headers, cookies, proxy, crawl delay, and request-rate values are applied to scanner HTTP requests for repeatable, controlled scans.
+
+Oreo rejects unsafe scan control values instead of silently changing them:
+
+- `max_pages`: 1 to 1000
+- `timeout`: 0.1 to 60 seconds
+- `crawl_delay`: 0 to 60 seconds
+- `requests_per_second`: 0.1 to 20
+
 ## Finding Schema
 
 Oreo findings use a stable structured format so JSON reports, HTML reports, dashboards, APIs, and future integrations can share the same data contract:

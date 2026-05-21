@@ -6,6 +6,25 @@ from pathlib import Path
 from sacs_oreo.config import SCAN_PROFILES, load_scan_config, resolve_scan_config
 
 
+def _scan_args(**overrides):
+    values = {
+        "target": "https://example.com",
+        "config": None,
+        "profile": None,
+        "mode": None,
+        "max_pages": None,
+        "timeout": None,
+        "output_dir": None,
+        "crawl_delay": None,
+        "requests_per_second": None,
+        "header": [],
+        "cookie": [],
+        "proxy": None,
+    }
+    values.update(overrides)
+    return argparse.Namespace(**values)
+
+
 class ScanConfigTests(unittest.TestCase):
     def test_load_toml_scan_config(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -169,6 +188,67 @@ scan:
             path.write_text("- https://example.com\n", encoding="utf-8")
 
             with self.assertRaisesRegex(ValueError, "Scan config must be an object"):
+                load_scan_config(path)
+
+    def test_numeric_config_values_are_bounded(self):
+        invalid_values = [
+            ("max_pages", 0, "between 1 and 1000"),
+            ("max_pages", 1001, "between 1 and 1000"),
+            ("timeout", 0, "between 0.1 and 60"),
+            ("timeout", 61, "between 0.1 and 60"),
+            ("crawl_delay", -0.1, "between 0 and 60"),
+            ("crawl_delay", 61, "between 0 and 60"),
+            ("requests_per_second", 0, "between 0.1 and 20"),
+            ("requests_per_second", 21, "between 0.1 and 20"),
+        ]
+        for field_name, value, message in invalid_values:
+            with self.subTest(field_name=field_name, value=value):
+                with self.assertRaisesRegex(ValueError, message):
+                    resolve_scan_config(_scan_args(**{field_name: value}))
+
+    def test_file_numeric_values_are_bounded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "oreo.toml"
+            path.write_text(
+                """
+[scan]
+target = "https://example.com"
+max_pages = -1
+""".strip(),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "max_pages.*between 1 and 1000"):
+                resolve_scan_config(_scan_args(target=None, config=str(path)))
+
+    def test_max_pages_must_be_an_integer(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "oreo.toml"
+            path.write_text(
+                """
+[scan]
+target = "https://example.com"
+max_pages = 1.5
+""".strip(),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "max_pages.*integer"):
+                load_scan_config(path)
+
+    def test_boolean_numeric_config_values_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "oreo.toml"
+            path.write_text(
+                """
+[scan]
+target = "https://example.com"
+max_pages = true
+""".strip(),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "max_pages.*integer"):
                 load_scan_config(path)
 
 
