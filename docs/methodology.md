@@ -60,6 +60,38 @@ Active mode is reserved for controlled authorized testing. In the current MVP, a
 
 Future active-mode work must remain bounded, rate-controlled, and evidence-driven. Active mode should not become a place for brute force, credential attacks, denial-of-service behavior, authentication bypass automation, or destructive payloads.
 
+## Repeatable Scans
+
+Repeatable scans should be configured through a file whenever the same target needs to be reviewed more than once. This reduces operator error and makes results easier to compare over time.
+
+Config files may define:
+
+- target
+- scan mode
+- scan profile
+- max pages
+- timeout
+- output directory
+- crawl delay
+- request rate
+- custom headers
+- custom cookies
+- proxy URL
+
+CLI options may override config values for one-off adjustments.
+## Transport Controls
+
+Repeatable scan settings should be enforced by the scanner transport, not only stored in config files.
+
+Oreo applies:
+
+- custom headers to crawler and probe requests
+- custom cookies through the Cookie header unless the operator provides a Cookie header manually
+- proxy settings for HTTP and HTTPS requests
+- crawl delay before subsequent requests
+- request-rate limits using the slowest configured interval
+
+These controls help authorized operators avoid accidental noisy scans and make scan behavior easier to reproduce.
 ## What Oreo Does Not Do
 
 Oreo does not aim to be an exploit launcher.

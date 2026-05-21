@@ -7,10 +7,11 @@ from pathlib import Path
 
 from . import __version__
 from .checks import _deduplicate_findings, run_passive_checks, run_probe_checks
+from .config import SCAN_PROFILES, resolve_scan_config
 from .crawler import Crawler
 from .models import ScanReport
 from .reporting import write_html_report, write_json_report
-from .safety import DEFAULT_SCAN_MODE, SCAN_MODES, get_scan_mode
+from .safety import SCAN_MODES, get_scan_mode
 from .url_utils import normalize_url
 
 
@@ -40,14 +41,37 @@ def scan(args: argparse.Namespace) -> int:
         print("Authorization was not confirmed. Scan aborted.", file=sys.stderr)
         return 2
 
-    mode = get_scan_mode(args.mode)
-    target = normalize_url(args.target)
+    try:
+        config = resolve_scan_config(args)
+    except ValueError as error:
+        print(f"Configuration error: {error}", file=sys.stderr)
+        return 2
+
+    mode = get_scan_mode(config.mode)
+    target = normalize_url(config.target)
     started_at = _utc_now()
-    crawler = Crawler(timeout=args.timeout)
-    pages = crawler.crawl(target, max_pages=args.max_pages)
+    crawler = Crawler(
+        timeout=config.timeout,
+        headers=config.headers,
+        cookies=config.cookies,
+        proxy=config.proxy,
+        crawl_delay=config.crawl_delay,
+        requests_per_second=config.requests_per_second,
+    )
+    pages = crawler.crawl(target, max_pages=config.max_pages)
     findings = run_passive_checks(target, pages)
     if mode.runs_validation_probes:
-        findings.extend(run_probe_checks(target, timeout=args.timeout))
+        findings.extend(
+            run_probe_checks(
+                target,
+                timeout=config.timeout,
+                headers=config.headers,
+                cookies=config.cookies,
+                proxy=config.proxy,
+                crawl_delay=config.crawl_delay,
+                requests_per_second=config.requests_per_second,
+            )
+        )
     findings = _deduplicate_findings(findings)
     completed_at = _utc_now()
 
@@ -63,12 +87,13 @@ def scan(args: argparse.Namespace) -> int:
         findings=findings,
     )
 
-    output_dir = Path(args.output_dir)
+    output_dir = Path(config.output_dir)
     json_path = write_json_report(report, output_dir / "oreo-report.json")
     html_path = write_html_report(report, output_dir / "oreo-report.html")
 
     print(f"Scan complete: {len(pages)} URLs discovered, {len(findings)} findings.")
     print(f"Mode: {mode.name} - {mode.description}")
+    print(f"Profile: {config.profile}")
     print(f"JSON report: {json_path}")
     print(f"HTML report: {html_path}")
     return 0
@@ -83,16 +108,26 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     scan_parser = subparsers.add_parser("scan", help="Run an authorized scan against a target URL.")
-    scan_parser.add_argument("target", help="Base URL to scan.")
+    scan_parser.add_argument("target", nargs="?", help="Base URL to scan. Can also be provided in a config file.")
+    scan_parser.add_argument("--config", help="Path to a TOML or JSON scan config file.")
+    scan_parser.add_argument(
+        "--profile",
+        choices=sorted(SCAN_PROFILES),
+        help="Scan profile: quick, standard, or deep-safe.",
+    )
     scan_parser.add_argument(
         "--mode",
         choices=sorted(SCAN_MODES),
-        default=DEFAULT_SCAN_MODE,
         help="Scan safety mode: passive skips validation probes; safe runs harmless probes; active is reserved for controlled testing.",
     )
-    scan_parser.add_argument("--max-pages", type=int, default=50, help="Maximum same-host pages to crawl.")
-    scan_parser.add_argument("--timeout", type=float, default=8.0, help="Per-request timeout in seconds.")
-    scan_parser.add_argument("--output-dir", default="reports", help="Directory for JSON and HTML reports.")
+    scan_parser.add_argument("--max-pages", type=int, help="Maximum same-host pages to crawl.")
+    scan_parser.add_argument("--timeout", type=float, help="Per-request timeout in seconds.")
+    scan_parser.add_argument("--output-dir", help="Directory for JSON and HTML reports.")
+    scan_parser.add_argument("--crawl-delay", type=float, help="Delay between crawl requests in seconds.")
+    scan_parser.add_argument("--requests-per-second", type=float, help="Target request rate.")
+    scan_parser.add_argument("--header", action="append", default=[], help="Custom header as 'Name: Value'.")
+    scan_parser.add_argument("--cookie", action="append", default=[], help="Custom cookie as 'name=value'.")
+    scan_parser.add_argument("--proxy", help="Proxy URL for HTTP and HTTPS requests.")
     scan_parser.add_argument(
         "--i-have-authorization",
         action="store_true",
