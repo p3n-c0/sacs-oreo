@@ -55,6 +55,19 @@ class CookieCheckTests(unittest.TestCase):
 
         self.assertEqual(check_cookies(page), [])
 
+    def test_cors_probe_ignores_unexpected_transport_errors(self):
+        from sacs_oreo.checks import check_cors
+        from sacs_oreo.crawler import Crawler
+
+        class BrokenOpener:
+            def open(self, request, timeout):
+                raise RuntimeError("simulated CORS transport failure")
+
+        crawler = Crawler()
+        crawler.opener = BrokenOpener()
+
+        self.assertEqual(check_cors("https://example.com/", crawler), [])
+
 
 if __name__ == "__main__":
     unittest.main()
