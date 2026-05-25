@@ -1,4 +1,5 @@
 import argparse
+import io
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -103,6 +104,53 @@ class SafetyModeTests(unittest.TestCase):
             crawl_delay=0.2,
             requests_per_second=1.5,
         )
+
+    def test_scan_prints_severity_and_fetch_error_summary(self):
+        args = argparse.Namespace(
+            target="https://example.com",
+            config=None,
+            profile=None,
+            mode="passive",
+            max_pages=1,
+            timeout=1.0,
+            output_dir="unused",
+            crawl_delay=None,
+            requests_per_second=None,
+            header=[],
+            cookie=[],
+            proxy=None,
+            i_have_authorization=True,
+        )
+        pages = [DiscoveredURL(url="https://example.com/", status_code=None, error="Timeout")]
+        finding = Finding(
+            id="OREO-999",
+            title="Probe finding",
+            severity="High",
+            confidence="Medium",
+            reproducibility="Observed Once",
+            category="Test Category",
+            owasp=None,
+            affected_url="https://example.com/",
+            evidence="evidence",
+            evidence_artifacts=[],
+            business_impact="This can reduce customer trust for a growing SME.",
+            recommendation="fix",
+            references=[],
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            args.output_dir = tmp
+            with patch.object(cli.Crawler, "crawl", return_value=pages), \
+                 patch.object(cli, "run_passive_checks", return_value=[finding]), \
+                 patch("sys.stdout", new_callable=io.StringIO) as stdout:
+                result = cli.scan(args)
+
+        output = stdout.getvalue()
+        self.assertEqual(result, 0)
+        self.assertIn("Severity summary:", output)
+        self.assertIn("High: 1", output)
+        self.assertIn("Fetch errors: 1", output)
+        self.assertIn("Top findings:", output)
 
 
 if __name__ == "__main__":

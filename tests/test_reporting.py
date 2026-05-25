@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from sacs_oreo.models import DiscoveredURL, EvidenceArtifact, Finding, ScanReport
+from sacs_oreo.models import CookieInfo, DiscoveredURL, EvidenceArtifact, Finding, ScanReport
 from sacs_oreo.reporting import write_html_report, write_json_report
 
 
@@ -17,7 +17,16 @@ class ReportingTests(unittest.TestCase):
             started_at="2026-05-20T00:00:00+00:00",
             completed_at="2026-05-20T00:00:01+00:00",
             authorization_confirmed=True,
-            discovered_urls=[DiscoveredURL(url="https://example.com/", status_code=200)],
+            discovered_urls=[
+                DiscoveredURL(
+                    url="https://example.com/",
+                    status_code=200,
+                    response_headers={"Set-Cookie": "session=secret", "Server": "Example"},
+                    cookies=[CookieInfo(name="session", value="secret", attributes={"httponly": True})],
+                    response_body_sample_bytes=128,
+                    response_body_sample_sha256="abc123body",
+                )
+            ],
             findings=[
                 Finding(
                     id="OREO-999",
@@ -54,6 +63,12 @@ class ReportingTests(unittest.TestCase):
         finding = parsed["findings"][0]
         self.assertEqual(parsed["tool"], "SACS Oreo")
         self.assertEqual(parsed["scan_mode"], "safe")
+        page = parsed["discovered_urls"][0]
+        self.assertEqual(page["response_headers"]["Set-Cookie"], "[redacted]")
+        self.assertEqual(page["response_headers"]["Server"], "Example")
+        self.assertEqual(page["cookies"][0]["value"], "[redacted]")
+        self.assertEqual(page["response_body_sample_bytes"], 128)
+        self.assertEqual(page["response_body_sample_sha256"], "abc123body")
         self.assertEqual(finding["id"], "OREO-999")
         self.assertEqual(finding["category"], "Test Category")
         self.assertEqual(finding["owasp"], "A05:2021")
@@ -71,6 +86,8 @@ class ReportingTests(unittest.TestCase):
         self.assertIn("Business Impact", html)
         self.assertIn("Recommendation", html)
         self.assertIn("https://example.com/", html)
+        self.assertIn("Body Sample SHA-256", html)
+        self.assertIn("abc123body", html)
 
 
 if __name__ == "__main__":

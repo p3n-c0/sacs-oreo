@@ -1,3 +1,4 @@
+import hashlib
 import unittest
 
 from sacs_oreo.crawler import Crawler, _PageParser
@@ -70,6 +71,53 @@ class CrawlerTransportTests(unittest.TestCase):
         crawler._throttle()
 
         self.assertEqual(sleeps, [])
+
+    def test_fetch_records_safe_response_evidence_summary(self):
+        body = b"<html><body>ok</body></html>"
+
+        class Headers:
+            def items(self):
+                return [("Content-Type", "text/html"), ("Set-Cookie", "session=secret; HttpOnly")]
+
+            def get_content_charset(self):
+                return "utf-8"
+
+            def get(self, name):
+                if name.lower() == "content-type":
+                    return "text/html"
+                return None
+
+            def get_all(self, name, default=None):
+                if name.lower() == "set-cookie":
+                    return ["session=secret; HttpOnly"]
+                return default or []
+
+        class Response:
+            status = 200
+            headers = Headers()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def read(self, limit):
+                return body
+
+        class Opener:
+            def open(self, request, timeout):
+                return Response()
+
+        crawler = Crawler()
+        crawler.opener = Opener()
+
+        page = crawler.fetch("https://example.com/")
+
+        self.assertEqual(page.response_body_sample_bytes, len(body))
+        self.assertEqual(page.response_body_sample_sha256, hashlib.sha256(body).hexdigest())
+        self.assertEqual(page.request_method, "GET")
+        self.assertEqual(page.cookies[0].name, "session")
 
 
 if __name__ == "__main__":
