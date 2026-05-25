@@ -37,6 +37,10 @@ def write_html_report(report: ScanReport, output_path: Path) -> Path:
         f"<td>{html.escape(page.url)}</td>"
         f"<td>{html.escape(str(page.status_code or 'N/A'))}</td>"
         f"<td>{html.escape(page.content_type or 'N/A')}</td>"
+        f"<td>{html.escape(page.request_method)}</td>"
+        f"<td>{html.escape(str(page.response_body_sample_bytes if page.response_body_sample_bytes is not None else 'N/A'))}</td>"
+        f"<td>{html.escape(page.response_body_sample_sha256 or 'N/A')}</td>"
+        f"<td>{html.escape(page.error or 'N/A')}</td>"
         f"<td>{html.escape(', '.join(page.technologies) or 'N/A')}</td>"
         f"<td>{len(page.forms)}</td>"
         f"<td>{len(page.cookies)}</td>"
@@ -79,9 +83,9 @@ def write_html_report(report: ScanReport, output_path: Path) -> Path:
   <h2>Discovered URLs</h2>
   <table>
     <thead>
-      <tr><th>URL</th><th>Status</th><th>Content-Type</th><th>Technologies</th><th>Forms</th><th>Cookies</th></tr>
+      <tr><th>URL</th><th>Status</th><th>Content-Type</th><th>Method</th><th>Sample Bytes</th><th>Body Sample SHA-256</th><th>Error</th><th>Technologies</th><th>Forms</th><th>Cookies</th></tr>
     </thead>
-    <tbody>{discovered_rows or '<tr><td colspan="6">No URLs discovered.</td></tr>'}</tbody>
+    <tbody>{discovered_rows or '<tr><td colspan="10">No URLs discovered.</td></tr>'}</tbody>
   </table>
 </body>
 </html>

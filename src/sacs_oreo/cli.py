@@ -9,7 +9,7 @@ from . import __version__
 from .checks import _deduplicate_findings, run_passive_checks, run_probe_checks
 from .config import SCAN_PROFILES, resolve_scan_config
 from .crawler import Crawler
-from .models import ScanReport
+from .models import Finding, ScanReport, SEVERITIES
 from .reporting import write_html_report, write_json_report
 from .safety import SCAN_MODES, get_scan_mode
 from .url_utils import normalize_url
@@ -34,6 +34,41 @@ def _confirm_authorization(non_interactive: bool) -> bool:
         return True
     answer = input("Type I HAVE AUTHORIZATION to continue: ").strip()
     return answer == "I HAVE AUTHORIZATION"
+
+
+
+def _severity_counts(findings: list[Finding]) -> dict[str, int]:
+    return {severity: sum(1 for finding in findings if finding.severity == severity) for severity in SEVERITIES}
+
+
+def _print_scan_summary(
+    pages_count: int,
+    findings: list[Finding],
+    fetch_error_count: int,
+    mode_name: str,
+    mode_description: str,
+    profile: str,
+    json_path: Path,
+    html_path: Path,
+) -> None:
+    counts = _severity_counts(findings)
+    severity_summary = ", ".join(f"{severity}: {counts[severity]}" for severity in reversed(SEVERITIES))
+    print(f"Scan complete: {pages_count} URLs discovered, {len(findings)} findings.")
+    print(f"Mode: {mode_name} - {mode_description}")
+    print(f"Profile: {profile}")
+    print(f"Severity summary: {severity_summary}")
+    print(f"Fetch errors: {fetch_error_count}")
+    top_findings = sorted(
+        findings,
+        key=lambda finding: SEVERITIES.index(finding.severity) if finding.severity in SEVERITIES else -1,
+        reverse=True,
+    )[:5]
+    if top_findings:
+        print("Top findings:")
+        for finding in top_findings:
+            print(f"- [{finding.severity}] {finding.title} ({finding.id}) on {finding.affected_url}")
+    print(f"JSON report: {json_path}")
+    print(f"HTML report: {html_path}")
 
 
 def scan(args: argparse.Namespace) -> int:
@@ -91,11 +126,17 @@ def scan(args: argparse.Namespace) -> int:
     json_path = write_json_report(report, output_dir / "oreo-report.json")
     html_path = write_html_report(report, output_dir / "oreo-report.html")
 
-    print(f"Scan complete: {len(pages)} URLs discovered, {len(findings)} findings.")
-    print(f"Mode: {mode.name} - {mode.description}")
-    print(f"Profile: {config.profile}")
-    print(f"JSON report: {json_path}")
-    print(f"HTML report: {html_path}")
+    fetch_error_count = sum(1 for page in pages if page.error)
+    _print_scan_summary(
+        pages_count=len(pages),
+        findings=findings,
+        fetch_error_count=fetch_error_count,
+        mode_name=mode.name,
+        mode_description=mode.description,
+        profile=config.profile,
+        json_path=json_path,
+        html_path=html_path,
+    )
     return 0
 
 

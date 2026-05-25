@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import time
 from collections import deque
 from html.parser import HTMLParser
@@ -165,6 +166,8 @@ class Crawler:
                     response_headers=headers,
                     cookies=_parse_cookies(response.headers.get_all("Set-Cookie", [])),
                     content_type=response.headers.get("Content-Type"),
+                    response_body_sample_bytes=len(raw_body),
+                    response_body_sample_sha256=hashlib.sha256(raw_body).hexdigest(),
                 )
                 setattr(page, "_body", body)
                 return page
@@ -181,6 +184,8 @@ class Crawler:
             )
             try:
                 raw_body = error.read(1024 * 1024)
+                page.response_body_sample_bytes = len(raw_body)
+                page.response_body_sample_sha256 = hashlib.sha256(raw_body).hexdigest()
                 setattr(page, "_body", raw_body.decode("utf-8", errors="replace"))
             except OSError:
                 pass
