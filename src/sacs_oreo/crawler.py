@@ -5,7 +5,7 @@ from collections import deque
 from html.parser import HTMLParser
 from http.cookies import SimpleCookie
 from typing import Callable, Iterable
-from urllib.error import HTTPError, URLError
+from urllib.error import HTTPError
 from urllib.parse import urljoin
 from urllib.request import ProxyHandler, Request, build_opener
 
@@ -81,6 +81,13 @@ def _detect_technologies(headers: dict[str, str], parser_technologies: Iterable[
 
 def _format_cookie_header(cookies: dict[str, str]) -> str:
     return "; ".join(f"{name}={value}" for name, value in cookies.items())
+
+
+def _format_fetch_error(error: Exception) -> str:
+    message = str(error).strip()
+    if message:
+        return f"{error.__class__.__name__}: {message}"
+    return error.__class__.__name__
 
 
 class Crawler:
@@ -178,9 +185,9 @@ class Crawler:
             except OSError:
                 pass
             return page
-        except (URLError, TimeoutError, OSError) as error:
+        except Exception as error:
             self._last_request_at = self._monotonic()
-            return DiscoveredURL(url=url, status_code=None, error=str(error))
+            return DiscoveredURL(url=url, status_code=None, error=_format_fetch_error(error))
 
     def _request_headers(self) -> dict[str, str]:
         headers = {"User-Agent": self.user_agent}

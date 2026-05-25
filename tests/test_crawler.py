@@ -71,6 +71,35 @@ class CrawlerTransportTests(unittest.TestCase):
 
         self.assertEqual(sleeps, [])
 
+    def test_fetch_records_unexpected_request_errors(self):
+        class BrokenOpener:
+            def open(self, request, timeout):
+                raise RuntimeError("simulated transport failure")
+
+        crawler = Crawler()
+        crawler.opener = BrokenOpener()
+
+        page = crawler.fetch("https://example.com/")
+
+        self.assertIsNone(page.status_code)
+        self.assertEqual(page.url, "https://example.com/")
+        self.assertIn("RuntimeError", page.error or "")
+        self.assertIn("simulated transport failure", page.error or "")
+
+    def test_crawl_continues_when_fetch_fails(self):
+        class BrokenOpener:
+            def open(self, request, timeout):
+                raise RuntimeError("simulated transport failure")
+
+        crawler = Crawler()
+        crawler.opener = BrokenOpener()
+
+        pages = crawler.crawl("https://example.com/", max_pages=5)
+
+        self.assertEqual(len(pages), 1)
+        self.assertIsNone(pages[0].status_code)
+        self.assertIn("simulated transport failure", pages[0].error or "")
+
 
 if __name__ == "__main__":
     unittest.main()

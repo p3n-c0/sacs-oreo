@@ -149,7 +149,7 @@ def check_cors(url: str, crawler: Crawler) -> list[Finding]:
         with crawler.opener.open(request, timeout=crawler.timeout) as response:
             crawler._last_request_at = crawler._monotonic()
             response_headers = {key.lower(): value for key, value in response.headers.items()}
-    except OSError:
+    except Exception:
         return []
 
     allow_origin = response_headers.get("access-control-allow-origin", "")
